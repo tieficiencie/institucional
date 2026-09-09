@@ -1,0 +1,91 @@
+name: Quality Governance
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: quality-governance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-metadata:
+    name: PR metadata and Issue link
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required PR sections
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PR_BODY:-}" ]; then
+            echo "::error::A descrição do Pull Request não pode estar vazia."
+            exit 1
+          fi
+
+          required_patterns=(
+            '^## Issues? relacionadas?'
+            '^## O que mudou'
+            '^## Como foi validado'
+            '^## Riscos e limitações'
+            '^## Próximos passos'
+          )
+
+          for pattern in "${required_patterns[@]}"; do
+            if ! printf '%s\n' "$PR_BODY" | grep -Eiq "$pattern"; then
+              echo "::error::Seção obrigatória ausente no PR: $pattern"
+              exit 1
+            fi
+          done
+
+      - name: Validate related Issue reference
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! printf '%s\n' "$PR_BODY" | grep -Eiq '(closes|fixes|resolves|relacionado à|relacionada à|related to)[[:space:]]+#[0-9]+'; then
+            echo "::error::O Pull Request deve mencionar uma Issue relacionada, preferencialmente com 'Closes #N'."
+            exit 1
+          fi
+
+  governance-files:
+    name: Governance files present
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Validate governance baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            'AGENTS.md'
+            '.github/pull_request_template.md'
+            '.github/workflows/quality-governance.yml'
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Arquivo obrigatório de governança ausente: $file"
+              exit 1
+            fi
+          done
+
+          grep -q 'Esteira obrigatória de qualidade' AGENTS.md || {
+            echo '::error::AGENTS.md não contém a política de esteira obrigatória de qualidade.'
+            exit 1
+          }
+
+          echo 'Governança mínima validada.'
