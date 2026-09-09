@@ -1,0 +1,63 @@
+name: Site Quality
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'script.js'
+      - 'brand-logo.svg'
+      - '.github/workflows/site-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-static-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        run: node --check script.js
+
+      - name: Validate site structure
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          css = Path('styles.css').read_text(encoding='utf-8')
+          js = Path('script.js').read_text(encoding='utf-8')
+
+          required_ids = ['home', 'como-funciona', 'beneficios', 'faq', 'contato']
+          missing = [item for item in required_ids if f'id="{item}"' not in html]
+          if missing:
+              raise SystemExit(f'Seções obrigatórias ausentes: {missing}')
+
+          if html.count('<h1') != 1:
+              raise SystemExit('O site deve possuir exatamente um H1.')
+
+          if 'prefers-reduced-motion' not in css:
+              raise SystemExit('styles.css precisa tratar prefers-reduced-motion.')
+
+          if '.js-whatsapp' not in js:
+              raise SystemExit('Integração de WhatsApp não encontrada no JavaScript.')
+
+          if not Path('brand-logo.svg').exists():
+              raise SystemExit('Arquivo de marca brand-logo.svg ausente.')
+
+          print('Estrutura, acessibilidade de motion e arquivos mínimos: OK')
+          PY
+
+      - name: Check production WhatsApp configuration
+        run: |
+          if grep -Eq '^const WHATSAPP_PHONE = "";' script.js; then
+            echo '::error::Configure o número oficial da Eficiencie em WHATSAPP_PHONE antes do merge/publicação.'
+            exit 1
+          fi
+          echo 'WhatsApp configurado: OK'
