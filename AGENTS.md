@@ -335,3 +335,149 @@ A revisão deve procurar tanto **motion ausente** quanto **motion em excesso**.
 Não considerar uma interface finalizada apenas porque funciona tecnicamente. A entrega deve demonstrar coerência visual, previsibilidade, feedback claro, performance e acabamento profissional.
 
 Em caso de dúvida entre adicionar mais animação e simplificar, priorizar clareza, rapidez percebida e continuidade. Motion deve servir à interface, não chamar atenção para si mesma.
+
+## 9. Esteira obrigatória de qualidade antes da `main`
+
+Nenhum código deve ser considerado pronto para merge na branch `main` sem passar pelos gates aplicáveis de qualidade. A regra é **fail-closed**: se um gate obrigatório falhar, estiver ausente ou não puder ser executado, o PR não deve ser tratado como pronto.
+
+A esteira deve ser proporcional ao stack e ao risco. Não instalar ferramentas apenas para marcar checklist, mas também não adiar gates essenciais depois que a tecnologia correspondente já existe no projeto.
+
+### 9.1 Gate mínimo para todo Pull Request
+
+Todo PR para `main` deve, no mínimo:
+
+- estar vinculado a uma Issue;
+- ter descrição completa conforme a seção 4;
+- declarar o que foi realmente validado;
+- registrar riscos, limitações e próximos passos;
+- passar pelos workflows obrigatórios do repositório;
+- não conter mudanças fora do escopo da Issue sem justificativa;
+- não introduzir segredos, credenciais ou dados sensíveis no repositório.
+
+### 9.2 Observabilidade
+
+Antes de produção, definir explicitamente a estratégia de observabilidade. Avaliar, conforme a arquitetura e maturidade:
+
+- **Sentry** para captura e investigação de erros;
+- **Datadog** ou **New Relic** quando houver necessidade real de APM/infra/monitoramento integrado;
+- **OpenTelemetry** como padrão de instrumentação quando tracing/métricas distribuídas fizerem sentido.
+
+Evitar múltiplas plataformas sobrepostas sem justificativa. A solução escolhida deve cobrir o necessário para o produto: erros, logs estruturados, métricas e, quando aplicável, tracing.
+
+### 9.3 Qualidade, lint e arquitetura executável
+
+Quando o stack suportar, avaliar e configurar antes do primeiro código relevante entrar na `main`:
+
+- **arch-contract** ou mecanismo equivalente para validar fronteiras arquiteturais;
+- **Biome** para lint/format em projetos JS/TS quando adequado;
+- **Commitlint** para convenção de commits quando o fluxo do time depender dela;
+- **Knip** para detectar código, arquivos e dependências não usados em projetos compatíveis;
+- **Stryker** para mutation testing em áreas onde a qualidade dos testes justifique o custo.
+
+Esses checks devem rodar em CI e falhar o PR quando forem definidos como obrigatórios.
+
+### 9.4 Testes e cobertura
+
+A estratégia de testes deve combinar camadas, sem exigir todas cegamente em toda mudança:
+
+- **unitários** para regras e unidades isoláveis;
+- **integração** para contratos entre módulos, serviços e persistência;
+- **end-to-end** para jornadas críticas;
+- **Codecov** ou cobertura equivalente quando cobertura for uma métrica útil de regressão;
+- **Playwright** como padrão preferencial para E2E web quando aplicável;
+- **Endtest** quando agregar valor real e não duplicar desnecessariamente a suíte E2E existente.
+
+Mudanças críticas devem incluir ou atualizar testes relevantes. Redução material de cobertura, remoção de testes ou bypass de gates exige justificativa explícita no PR.
+
+### 9.5 Segurança e operação
+
+Toda arquitetura aplicável deve considerar:
+
+- **rate limit** em endpoints públicos, autenticação, formulários sensíveis e superfícies sujeitas a abuso;
+- revisão de segurança para autenticação, autorização, pagamentos, dados pessoais, upload de arquivos, integrações externas, secrets e mudanças de infraestrutura;
+- dependências e permissões mínimas necessárias;
+- tratamento seguro de erros sem exposição de dados sensíveis;
+- separação clara de responsabilidades entre frontend e backend;
+- nenhuma regra de negócio sensível ou segredo confiado exclusivamente ao frontend.
+
+Quando o produto coletar dados pessoais, possuir usuários finais ou condições contratuais, **Termos de Uso** e **Política de Privacidade** devem ser revisados e aprovados pelo jurídico antes da publicação/produção. Agentes não devem declarar aprovação jurídica sem evidência explícita.
+
+### 9.6 Performance budget
+
+Quando existir interface, API ou serviço mensurável, definir budget de performance antes de a aplicação amadurecer sem limites claros.
+
+O budget deve ser objetivo e testável, considerando conforme o contexto:
+
+- peso inicial e lazy loading;
+- Core Web Vitals para web quando aplicável;
+- tempo de resposta de APIs críticas;
+- uso de CPU/memória em operações relevantes;
+- número de requests e dependências críticas;
+- regressões perceptíveis de renderização/interação.
+
+PRs que ultrapassem budgets definidos devem falhar ou documentar uma exceção aprovada e temporária.
+
+### 9.7 Separação entre frontend e backend
+
+Quando ambas as camadas existirem:
+
+- frontend não deve acessar diretamente recursos internos que pertençam ao backend;
+- contratos de API devem ser explícitos e versionáveis quando necessário;
+- validação e autorização críticas devem ocorrer no servidor;
+- tipos/contratos podem ser compartilhados sem criar acoplamento circular;
+- limites de responsabilidade devem ser simples e compreensíveis.
+
+### 9.8 Arquitetura sem overengineering
+
+Toda implementação deve buscar a solução mais simples que satisfaça os requisitos e preserve evolução saudável.
+
+Princípios obrigatórios:
+
+- evitar **overengineering** e infraestrutura prematura;
+- identificar e evitar **bottlenecks óbvios** de arquitetura, dados, rede ou processamento;
+- componentizar desde o início em unidades coesas, não em microcomponentes artificiais;
+- aplicar **DRY com critério**: duplicação pequena e local pode ser melhor que uma abstração prematura;
+- abstrair quando houver padrão real, não apenas semelhança visual momentânea;
+- antes de criar componente, hook, serviço, helper ou utilitário, procurar implementação existente;
+- preferir reutilizar ou estender componentes existentes quando isso preservar clareza;
+- impedir reconstrução de componentes equivalentes sem justificativa registrada;
+- evitar dependências novas quando a plataforma ou o código existente resolvem o problema com clareza semelhante.
+
+### 9.9 Matriz de ativação dos gates
+
+Enquanto o repositório ainda não possuir aplicação, os gates genéricos de governança são obrigatórios.
+
+Antes do **primeiro código** de cada categoria entrar na `main`, o PR que introduzir essa categoria deve também ativar os gates mínimos correspondentes:
+
+| Categoria introduzida | Gates mínimos antes do merge |
+| --- | --- |
+| Frontend JS/TS | lint/format, testes unitários quando houver lógica, build, validação de UI, performance budget inicial, E2E para jornada crítica quando já existir jornada |
+| Backend/API | lint/format, unitários, integração, revisão de segurança, rate limit quando exposto, logging/erros, contrato frontend/backend |
+| Persistência/banco | integração, migração/rollback quando aplicável, validação de dados, revisão de performance das consultas críticas |
+| Autenticação/autorização | testes negativos e positivos, revisão de segurança, rate limit/anti-abuso, observabilidade de falhas sem vazamento de dados |
+| Produção/deploy | build reproduzível, health checks quando aplicável, observabilidade definida, rollback/deploy strategy, performance e segurança mínimas |
+| Dados pessoais/usuários finais | segurança, minimização de dados, política de privacidade e termos submetidos à revisão jurídica antes da produção |
+
+### 9.10 Proibição de bypass silencioso
+
+Não desabilitar, comentar, pular ou transformar em `continue-on-error` um gate obrigatório apenas para fazer o PR passar.
+
+Qualquer exceção temporária deve:
+
+- estar ligada a uma Issue específica;
+- explicar o motivo;
+- registrar risco;
+- ter prazo ou condição clara de remoção;
+- ser visível no PR.
+
+### 9.11 Regra de merge
+
+Um PR só deve ser recomendado para merge quando:
+
+1. todos os checks obrigatórios aplicáveis estiverem verdes;
+2. a validação descrita no PR corresponder ao que foi realmente executado;
+3. riscos e limitações estiverem registrados;
+4. revisões necessárias de segurança, produto, arquitetura ou jurídico estiverem concluídas quando aplicáveis;
+5. não houver pendência crítica escondida em “próximos passos”.
+
+A proteção técnica da branch `main` deve exigir os checks quando a configuração do GitHub permitir. Se a ferramenta/agente atual não tiver permissão para criar rulesets ou branch protection, isso deve ser registrado como limitação administrativa e não deve ser confundido com garantia técnica já aplicada.
