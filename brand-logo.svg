@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-labelledby="title desc">
+  <title id="title">Eficiencie Gestão Empresarial</title>
+  <desc id="desc">Identidade visual em azul-marinho, branco e dourado, baseada na logo fornecida para o site institucional.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1cf72"/>
+      <stop offset="1" stop-color="#d7a83a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="220" height="220" rx="42" fill="#020e2d"/>
+  <rect x="48" y="132" width="30" height="50" rx="4" fill="url(#gold)"/>
+  <rect x="96" y="105" width="30" height="77" rx="4" fill="url(#gold)"/>
+  <rect x="144" y="66" width="30" height="116" rx="4" fill="url(#gold)"/>
+  <path d="M61 118 L111 80 L157 39 L184 20" fill="none" stroke="#f4f4f2" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="184" cy="20" r="10" fill="#020e2d" stroke="#f4f4f2" stroke-width="7"/>
+  <text x="258" y="112" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="78" font-weight="700" letter-spacing="-2">Eficiencie</text>
+  <text x="264" y="165" fill="#f4f4f2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="11">GESTÃO EMPRESARIAL</text>
+  <rect x="264" y="188" width="132" height="5" rx="2.5" fill="#d7a83a"/>
+</svg>
