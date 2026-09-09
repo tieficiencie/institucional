@@ -77,7 +77,7 @@ Registrar as validações realmente executadas, por exemplo:
 - testes de regressão;
 - outros procedimentos pertinentes.
 
-Em mudanças de interface, registrar também quais estados de carregamento, feedback, progresso, transições, entrada/saída e reduced motion foram verificados.
+Em mudanças de interface, registrar também quais estados de carregamento, feedback, progresso, transições, entrada/saída, motion gaps e reduced motion foram verificados.
 
 Nunca declarar uma validação como concluída se ela não tiver sido efetivamente executada.
 
@@ -129,17 +129,86 @@ Ao receber uma nova solicitação de alteração, o agente deve primeiro verific
 
 O agente também deve evitar incluir alterações não relacionadas à Issue atual no mesmo Pull Request.
 
-## 7. Motion Principles e padrão obrigatório de experiência de interface
+## 7. Design Motion Principles e padrão obrigatório de experiência de interface
 
-Toda implementação de UI/UX deve tratar movimento, carregamento e feedback como parte funcional da experiência, e não como acabamento opcional.
+Toda implementação ou revisão relevante de UI/UX deve utilizar como referência oficial a skill **Design Motion Principles**:
 
-A referência preferencial do projeto é **Motion Principles**, indicada em:
+`https://github.com/kylezantos/design-motion-principles`
 
-`https://github.com/kylezantos/design-principles`
+Arquivo principal da skill:
 
-Antes de implementar ou revisar mudanças relevantes de interface, consulte essa referência quando ela estiver acessível. Se a fonte externa estiver indisponível, não alegue que ela foi lida: utilize os princípios obrigatórios abaixo como baseline do projeto e registre a limitação no Pull Request quando isso for relevante.
+`skills/design-motion-principles/SKILL.md`
 
-### Lazy loading
+A skill opera em dois modos:
+
+- **Create** — construir ou melhorar componentes com motion proposital;
+- **Audit** — revisar motion existente, identificar motion gaps, anti-patterns e oportunidades de melhoria.
+
+Antes de trabalhos de interface, o agente deve identificar qual modo se aplica e consultar o workflow correspondente da skill.
+
+### 7.1 Contexto e ponderação de perspectivas
+
+Motion não deve ser aplicado por regra fixa. A skill exige ponderar o contexto do produto usando três perspectivas:
+
+- **Emil Kowalski** — restrição, velocidade, frequência e propósito;
+- **Jakub Krehel** — acabamento sutil e qualidade de produção;
+- **Jhey Tompkins** — expressão, experimentação e delight quando apropriado.
+
+Para o contexto institucional/marketing deste projeto, a referência inicial é:
+
+- **Primário: Jakub Krehel** — acabamento profissional e sutileza;
+- **Secundário: Jhey Tompkins** — expressão seletiva em momentos de destaque;
+- **Seletivo: Emil Kowalski** — navegação, formulários e interações frequentes onde velocidade e restrição importam mais.
+
+Se o tipo de produto mudar, essa ponderação deve ser reavaliada.
+
+### 7.2 Frequency Gate: decidir se deve animar antes de animar
+
+Antes de adicionar ou aprovar qualquer animação, avaliar a frequência de uso:
+
+- **Rara** — motion expressivo pode ser apropriado;
+- **Ocasional** — motion sutil e rápido;
+- **Frequente** — mínimo motion ou transição instantânea;
+- **Iniciada por teclado** — não animar.
+
+A melhor animação em interfaces de produção tende a passar despercebida. Motion deve melhorar compreensão, continuidade ou feedback; não deve existir apenas para parecer sofisticado.
+
+### 7.3 Timing e easing
+
+A duração deve ser dependente do contexto, não uma regra universal:
+
+- interfaces orientadas a produtividade: preferir motion rápido, normalmente abaixo de 300 ms;
+- acabamento de produção: aproximadamente 200–500 ms quando a suavidade justificar;
+- momentos criativos ou de showcase: duração pode variar quando o efeito realmente serve à experiência.
+
+Evitar easing genérico ou inconsistente. Componentes equivalentes devem compartilhar um vocabulário coerente de timing e easing.
+
+### 7.4 Performance de motion
+
+Preferir animações baseadas em propriedades amigáveis à composição:
+
+- `transform`;
+- `opacity`;
+- `filter`, quando apropriado e medido.
+
+Evitar animar `width`, `height`, `top`, `left` ou outras propriedades que provoquem layout desnecessário quando houver alternativa baseada em transform/composição.
+
+Para animações numerosas ou complexas, revisar também a referência de performance da skill.
+
+### 7.5 Acessibilidade é obrigatória
+
+Toda motion relevante deve respeitar `prefers-reduced-motion`, sem exceção.
+
+Quando reduced motion estiver ativo:
+
+- reduzir ou remover deslocamentos, escalas e efeitos não essenciais;
+- manter feedback de estado por meios não animados;
+- preservar compreensão da mudança;
+- evitar animações contínuas ou vestibularmente agressivas.
+
+Nunca depender exclusivamente de animação ou cor para comunicar informação essencial.
+
+### 7.6 Lazy loading
 
 Utilizar lazy loading quando fizer sentido para reduzir trabalho inicial e acelerar a percepção de resposta, especialmente para:
 
@@ -147,36 +216,39 @@ Utilizar lazy loading quando fizer sentido para reduzir trabalho inicial e acele
 - módulos ou áreas secundárias;
 - listas extensas;
 - conteúdos abaixo da dobra;
-- dependências pesadas que não sejam necessárias para a primeira interação.
+- dependências pesadas não necessárias para a primeira interação.
 
 Lazy loading não deve atrasar conteúdo crítico nem gerar mudanças de layout evitáveis.
 
-### Skeleton screens e estados de carregamento
+### 7.7 Skeleton screens e estados de carregamento
 
-Para carregamentos estruturais ou perceptíveis, preferir skeleton screens que preservem a forma aproximada do conteúdo final.
+Para carregamentos estruturais ou perceptíveis, preferir skeleton screens que preservem aproximadamente a forma do conteúdo final.
 
 Evitar:
 
 - telas vazias durante espera;
 - spinners genéricos quando a estrutura do conteúdo já é conhecida;
-- saltos grandes de layout na conclusão do carregamento;
+- saltos grandes de layout ao finalizar carregamento;
 - placeholders sem relação visual com o conteúdo final.
 
-Skeletons devem ter movimento discreto, não competir com o conteúdo e respeitar `prefers-reduced-motion`.
+Skeletons devem ser discretos, não competir com o conteúdo e respeitar `prefers-reduced-motion`.
 
-### Animações de entrada e saída
+### 7.8 Entrada, saída e motion gaps
 
-Elementos que surgem, desaparecem, expandem, recolhem ou mudam de contexto devem utilizar transições suaves e intencionais quando isso melhorar compreensão espacial e continuidade.
+Elementos que surgem, desaparecem, expandem, recolhem ou trocam de contexto devem ser avaliados para determinar se uma transição ajuda a preservar continuidade.
 
-As animações devem:
+Em revisões de interface, procurar explicitamente por **motion gaps**, como:
 
-- comunicar causa e efeito;
-- preservar contexto entre estados;
-- evitar mudanças instantâneas e bruscas quando uma transição ajudaria o usuário;
-- ter duração e easing consistentes;
-- evitar excesso de movimento decorativo ou atrasos desnecessários.
+- modais que aparecem/desaparecem instantaneamente;
+- conteúdo de abas que troca sem continuidade;
+- estados loading/content que dão snap;
+- campos condicionais que surgem abruptamente;
+- listas, toasts, alerts ou drawers sem entrada/saída adequada;
+- mudanças dimensionais bruscas sem transição útil.
 
-### Estados de progresso
+Encontrar um motion gap não significa animar automaticamente. Primeiro aplicar o Frequency Gate e decidir se a animação realmente melhora a experiência.
+
+### 7.9 Estados de progresso
 
 Toda ação assíncrona iniciada pelo usuário deve deixar claro que está em andamento.
 
@@ -188,13 +260,11 @@ Exemplos:
 - prevenção de clique duplicado durante operações não idempotentes;
 - indicação clara quando uma ação estiver aguardando resposta.
 
-O estado de progresso deve preservar o contexto da ação e, sempre que possível, evitar substituir completamente o conteúdo do componente.
+O estado de progresso deve preservar contexto e, sempre que possível, evitar substituir completamente o componente.
 
-### Feedback visual de ações
+### 7.10 Feedback visual de ações
 
-Toda ação relevante do usuário deve produzir feedback perceptível e coerente.
-
-Considere, conforme o componente:
+Toda ação relevante do usuário deve produzir feedback perceptível e coerente, considerando conforme o componente:
 
 - hover;
 - focus visível;
@@ -205,69 +275,63 @@ Considere, conforme o componente:
 - aviso;
 - disabled;
 - loading;
-- conclusão de uma operação;
-- alterações de estado otimistas com tratamento de falha.
+- conclusão;
+- atualização otimista e eventual rollback.
 
-Nunca depender exclusivamente de cor ou animação para comunicar informação essencial.
+Interações frequentes não devem receber animações chamativas só porque existe um estado visual.
 
-### Transições entre telas e componentes
+### 7.11 Transições entre telas e componentes
 
-Telas, cards, modais, drawers, menus, listas e demais superfícies devem seguir um vocabulário de movimento consistente.
+Telas, cards, modais, drawers, menus, listas e superfícies equivalentes devem seguir um vocabulário consistente de motion.
 
-Para componentes equivalentes, mantenha consistência de:
+Manter consistência de:
 
 - direção de entrada/saída;
 - duração;
 - easing;
 - escala ou deslocamento;
-- comportamento do backdrop;
-- ordem visual de montagem e desmontagem;
-- manutenção do foco e contexto do usuário.
+- comportamento de backdrop;
+- ordem de montagem/desmontagem;
+- manutenção de foco e contexto.
 
-Evite combinar padrões de movimento diferentes sem motivo de produto claro.
-
-### Acessibilidade e reduced motion
-
-Toda motion relevante deve respeitar `prefers-reduced-motion`.
-
-Quando reduced motion estiver ativo:
-
-- reduzir ou remover deslocamentos e escalas não essenciais;
-- manter feedback de estado por meios não animados;
-- preservar legibilidade e compreensão das mudanças;
-- evitar animações contínuas ou efeitos que possam causar desconforto.
-
-O foco de teclado, leitura por tecnologias assistivas e ordem de interação devem permanecer corretos durante e após transições.
+A saída deve geralmente ser mais sutil que a entrada.
 
 ## 8. Revisão obrigatória como designer de produto sênior
 
-Antes de considerar qualquer interface pronta para entrega, realizar uma revisão final de produto cobrindo pelo menos:
+Antes de considerar qualquer interface pronta para entrega, executar uma revisão final de produto e de motion.
 
-- primeira impressão;
-- hierarquia visual;
-- continuidade entre estados;
-- loading e empty states;
-- erros e recuperação;
-- feedback das ações;
-- fluidez de modais, cards, listas e navegação;
-- consistência das transições;
-- responsividade;
-- acessibilidade;
-- reduced motion;
-- sensação geral de qualidade.
+Essa revisão deve funcionar como um **Audit** da skill e cobrir pelo menos:
 
-Durante essa revisão, corrigir tudo que pareça:
+1. contexto do produto e padrões existentes;
+2. hierarquia visual e primeira impressão;
+3. motion gaps em renderizações condicionais e mudanças de estado;
+4. animações desnecessárias ou excessivas;
+5. frequência das interações;
+6. loading, skeletons e empty states;
+7. progresso e feedback das ações;
+8. entrada/saída de modais, cards, listas, drawers, toasts e navegação;
+9. consistência de timing/easing;
+10. performance de animação;
+11. foco, teclado e acessibilidade;
+12. `prefers-reduced-motion`;
+13. responsividade;
+14. sensação geral de acabamento e qualidade.
+
+Corrigir tudo que pareça:
 
 - brusco;
 - travado;
 - genérico;
 - inconsistente;
 - excessivamente animado;
+- decorativo sem propósito;
 - sem feedback;
 - visualmente pobre durante carregamento;
 - improvisado;
 - amador.
 
-Não considerar uma interface finalizada apenas porque ela funciona tecnicamente. A entrega deve também demonstrar coerência visual, previsibilidade, feedback claro e acabamento compatível com um produto profissional.
+A revisão deve procurar tanto **motion ausente** quanto **motion em excesso**.
 
-Em caso de dúvida entre adicionar mais animação e simplificar, priorizar clareza, rapidez percebida e continuidade. Motion deve melhorar a compreensão da interface, não chamar atenção para si mesma.
+Não considerar uma interface finalizada apenas porque funciona tecnicamente. A entrega deve demonstrar coerência visual, previsibilidade, feedback claro, performance e acabamento profissional.
+
+Em caso de dúvida entre adicionar mais animação e simplificar, priorizar clareza, rapidez percebida e continuidade. Motion deve servir à interface, não chamar atenção para si mesma.
